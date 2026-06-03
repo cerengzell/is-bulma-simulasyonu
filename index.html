@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İş Bulma Süresi Tahmincisi - Akademik Analiz Paneli</title>
+    
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom Light-Theme Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        
+        <!-- Premium Header Panel -->
+        <header>
+            <div class="header-content">
+                <div class="header-title-section">
+                    <h1><i class="fa-solid fa-graduation-cap"></i> İlk İş Bulma Süresi Tahmincisi</h1>
+                    <p>
+                        Üniversite mezunlarının niteliklerine göre mezuniyet sonrası ilk tam zamanlı işlerini bulma sürelerini tahmin eden bilimsel ekonometrik hesaplayıcı.
+                    </p>
+                </div>
+                <div class="header-meta-badges">
+                    <span class="badge badge-primary"><i class="fa-solid fa-chart-line"></i> TÜİK (Temmuz 2025 Güncellemesi, 2024 yılı verisi)</span>
+                    <span class="badge"><i class="fa-solid fa-user-check"></i> Baert et al. (ScienceDirect, 2021)</span>
+                    <span class="badge"><i class="fa-solid fa-building-user"></i> NACE Job Outlook 2021</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Two Column Dashboard Layout -->
+        <div class="dashboard-layout">
+            
+            <!-- Left Card: Inputs -->
+            <div class="card">
+                <h2 class="card-title"><i class="fa-solid fa-user-slider"></i> Aday Profili Değişkenleri</h2>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                    Mezunun bölümünü, not ortalamasını ve staj tecrübesini girerek istihdam olasılıklarını hesaplayın.
+                </p>
+
+                <!-- Department Selector -->
+                <div class="form-group">
+                    <label class="form-label" for="calc-dept">Mezun Olunan Bölüm</label>
+                    <select class="form-select" id="calc-dept">
+                        <!-- Filled dynamically by JS -->
+                    </select>
+                </div>
+
+                <!-- GPA Slider -->
+                <div class="form-group" style="margin-top: 1.75rem;">
+                    <label class="form-label" for="calc-gpa">
+                        Not Ortalaması (GPA / NOY)
+                        <span class="form-value" id="calc-gpa-val">2.80</span>
+                    </label>
+                    <input type="range" class="form-range" id="calc-gpa" min="1.0" max="4.0" step="0.05" value="2.80">
+                    <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;">
+                        <span>1.00 (Kritik)</span>
+                        <span>2.80 (Ortalama)</span>
+                        <span>4.00 (Mükemmel)</span>
+                    </div>
+                </div>
+
+                <!-- Internship Slider -->
+                <div class="form-group" style="margin-top: 1.75rem;">
+                    <label class="form-label" for="calc-internship">
+                        Toplam Dış Staj / İş Tecrübesi
+                        <span class="form-value" id="calc-internship-val">2 Ay</span>
+                    </label>
+                    <input type="range" class="form-range" id="calc-internship" min="0" max="24" step="1" value="2">
+                    <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;">
+                        <span>0 Ay (Stajsız)</span>
+                        <span>12 Ay (1 Yıl)</span>
+                        <span>24 Ay (Maksimum)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Card: Analytics -->
+            <div class="card" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <h2 class="card-title" style="margin-bottom:0.5rem;"><i class="fa-solid fa-magnifying-glass-chart"></i> İstihdam Tahmin Analizi</h2>
+                
+                <!-- Glowing result container -->
+                <div class="result-display-box">
+                    <span class="result-time-label">Beklenen İlk İş Bulma Süresi</span>
+                    <div class="result-time-value" id="calc-result-val">-- Ay</div>
+                    <div class="result-confidence-interval" id="calc-ci-val">En Olası Aralık: -- Ay</div>
+                </div>
+
+                <!-- TÜİK Benchmark comparison bar -->
+                <div class="compare-container">
+                    <div class="compare-title">
+                        <span>TÜİK Lisans Ortalaması Kıyaslama (14.4 Ay)</span>
+                        <span id="compare-pct-badge" style="color: var(--accent-green); font-weight: 700; font-size: 0.85rem;"></span>
+                    </div>
+                    <div class="compare-bar-bg">
+                        <div class="compare-bar-active" id="calc-compare-fill"></div>
+                        <div class="compare-marker-line" style="left: 60%;"></div> <!-- 14.4 / 24 = 60% -->
+                        <div class="compare-bar-text" id="compare-text-val"></div>
+                    </div>
+                </div>
+
+                <!-- Interactive curve -->
+                <div>
+                    <span class="form-label" style="margin-bottom: 0.5rem;">Kümülatif İşe Yerleşme İhtimali (%)</span>
+                    <div class="chart-block">
+                        <canvas id="chart-individual-prob"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Collapsible Academic Reference Panel -->
+        <div class="collapsible-panel">
+            <button class="collapsible-trigger" id="ref-toggle-btn">
+                <span><i class="fa-solid fa-circle-info"></i> Bilimsel Metot ve Akademik Literatür Kaynakları</span>
+                <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="collapsible-content" id="ref-content-panel">
+                <div class="collapsible-body">
+                    
+                    <!-- References Grid -->
+                    <div class="references-grid">
+                        
+                        <!-- Reference 1 -->
+                        <div class="ref-item">
+                            <div class="ref-header"><i class="fa-solid fa-building-columns"></i> TÜİK Resmi Verisi</div>
+                            <div class="ref-body">
+                                Türkiye İstatistik Kurumu'nun (TÜİK) Temmuz 2025'te güncellenen (2024 yılı verisi) Yükseköğretim İstihdam Göstergeleri raporuna göre lisans mezunlarının genel ortalama iş bulma süresi <strong>14.4 aydır</strong>. Bölümlere göre bu değerler tıp gibi doğrudan atamalı alanlarda 4.1 ay iken, mühendislikte 11.6 ay, BİT (Bilişim) alanında 11.8 ay ve eğitim bilimlerinde 12.6 ay olarak raporlanmıştır.
+                            </div>
+                        </div>
+
+                        <!-- Reference 2 -->
+                        <div class="ref-item">
+                            <div class="ref-header"><i class="fa-solid fa-flask"></i> Baert et al. (ScienceDirect, 2021)</div>
+                            <div class="ref-body">
+                                <em>ScienceDirect</em> üzerinde yayımlanan araştırmada (1248 aday CV'si ile yapılan randomize saha deneyi; çalışmanın orijinal tartışma tebliği 2019 yılında hazırlanmış olup, ScienceDirect dergisinde hakemli olarak 2021 yılında yayımlanmıştır), staj geçmişi olan adayların işverenlerden mülakat daveti alma olasılığının stajsız adaylara göre <strong>%12.6 daha yüksek</strong> olduğu kanıtlanmıştır. Bu ampirik veri, stajın iş arama sürecini kısaltmadaki önemini üstel olarak doğrulamaktadır.
+                            </div>
+                        </div>
+
+                        <!-- Reference 3 -->
+                        <div class="ref-item">
+                            <div class="ref-header"><i class="fa-solid fa-building"></i> NACE Job Outlook 2021</div>
+                            <div class="ref-body">
+                                <em>National Association of Colleges and Employers (NACE)</em> tarafından yürütülen Job Outlook 2021 araştırmasına göre, işverenler iki eşit nitelikli aday arasında seçim yaparken staj deneyimini en belirleyici faktör olarak değerlendirmektedir. Simülasyonumuzda stajı bulunmayan mezunlar için uygulanan iş bulma gecikmesi bu bulguya dayanır.
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Survival AFT Math -->
+                    <div class="methodology-text">
+                        <h4 style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Matematiksel Alt Yapı (Survival Analysis)</h4>
+                        <p>
+                            İstihdam süreleri gibi sağa çarpık (right-skewed) ve pozitif verilerin doğrusal modellenmesi istatistiksel açıdan hatalı sonuçlar vermektedir. Bu yüzden, ekonometri literatüründe işsizlik ve iş arama sürelerini analiz etmek için standart olarak kullanılan <strong>Hızlandırılmış Başarısızlık Süresi (Accelerated Failure Time - AFT) Log-Normal Dağılım Modeli</strong> kullanılmıştır:
+                        </p>
+                        
+                        <div class="formula-block">
+                            T<sub>i</sub> = exp( &mu;<sub>bölüm</sub> + &beta;<sub>GPA</sub> &times; (GPA<sub>i</sub> - 2.8) + &beta;<sub>staj</sub> &times; Staj<sub>i</sub> + &theta;<sub>Akademik_Ref</sub> )
+                        </div>
+                        
+                        <p>
+                            Formülde; <strong>GPA etkisi</strong> (-0.25) not ortalamasının her 1 birim artışında süreyi %22 kısaltırken, <strong>staj etkisi</strong> (-0.04) her staj ayında süreyi %4 kısaltır. Model, staj yapmış adaylar için Baert et al. bulgusuna paralel olarak <em>&theta; = -0.12</em> katsayı azaltımı (iş bulmayı hızlandırır) ve stajsız adaylar için NACE bulgusu gereği <em>&theta; = +0.14</em> katsayı artırımı (iş bulmayı geciktirir) uygular.
+                        </p>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; margin-top: 0.5rem; border-left: 2px solid var(--primary); padding-left: 0.5rem;">
+                            Not: Bu katsayılar ilgili literatürden ilham alınarak türetilmiş tahmini değerlerdir; doğrudan tek bir çalışmadan alınmamıştır.
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Corporate Footer -->
+        <footer>
+            Mezun İstihdam ve Kariyer Yolculuğu Analizcisi &copy; 2026. İnsan Kaynakları Ekonometrisi Dersi Dönem Ödevi Projesi.
+        </footer>
+
+    </div>
+
+    <!-- Application Script -->
+    <script src="app.js"></script>
+</body>
+</html>
