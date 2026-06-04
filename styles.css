@@ -508,6 +508,138 @@ header::before {
     margin-bottom: 0;
 }
 
+/* ===== Veri Dışa Aktarımı (Export) Paneli ===== */
+.export-panel {
+    background: #f8fafc;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.export-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.export-panel-header i {
+    color: var(--primary);
+    font-size: 1rem;
+}
+
+.export-info-badge {
+    margin-left: auto;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: #e2e8f0;
+    border-radius: 9999px;
+    padding: 0.2rem 0.75rem;
+    letter-spacing: 0.02em;
+}
+
+.export-buttons {
+    display: flex;
+    gap: 0.85rem;
+}
+
+.export-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.9rem 1rem;
+    border: none;
+    border-radius: 12px;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+}
+
+.export-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.export-btn:hover::before {
+    opacity: 1;
+}
+
+.export-btn i {
+    font-size: 1.4rem;
+    margin-bottom: 0.1rem;
+}
+
+.export-btn-sub {
+    font-size: 0.7rem;
+    font-weight: 500;
+    opacity: 0.78;
+    letter-spacing: 0.01em;
+}
+
+/* CSV Butonu — Yeşil tema */
+.export-btn-csv {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.35);
+}
+
+.export-btn-csv:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -4px rgba(16, 185, 129, 0.5);
+    filter: brightness(1.08);
+}
+
+.export-btn-csv:active {
+    transform: translateY(0);
+    filter: brightness(0.96);
+}
+
+/* JSON Butonu — İndigo tema */
+.export-btn-json {
+    background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 14px -2px rgba(79, 70, 229, 0.35);
+}
+
+.export-btn-json:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -4px rgba(79, 70, 229, 0.5);
+    filter: brightness(1.08);
+}
+
+.export-btn-json:active {
+    transform: translateY(0);
+    filter: brightness(0.96);
+}
+
+/* İndirme animasyonu — butona tıklandığında */
+@keyframes exportPulse {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(0.95); }
+    100% { transform: scale(1); }
+}
+
+.export-btn.downloading {
+    animation: exportPulse 0.35s ease;
+    pointer-events: none;
+    opacity: 0.85;
+}
+
 /* Footer styling */
 footer {
     text-align: center;

@@ -117,6 +117,27 @@
                         <canvas id="chart-individual-prob"></canvas>
                     </div>
                 </div>
+
+                <!-- Veri Dışa Aktarımı (Export) Paneli -->
+                <div class="export-panel">
+                    <div class="export-panel-header">
+                        <i class="fa-solid fa-file-export"></i>
+                        <span>Veri Dışa Aktarımı</span>
+                        <span class="export-info-badge">1. – 24. Ay Kümülatif Olasılık Verileri</span>
+                    </div>
+                    <div class="export-buttons">
+                        <button class="export-btn export-btn-csv" id="btn-export-csv" onclick="exportCSV()">
+                            <i class="fa-solid fa-file-csv"></i>
+                            <span>CSV İndir</span>
+                            <span class="export-btn-sub">Excel / LibreOffice</span>
+                        </button>
+                        <button class="export-btn export-btn-json" id="btn-export-json" onclick="exportJSON()">
+                            <i class="fa-solid fa-file-code"></i>
+                            <span>JSON İndir</span>
+                            <span class="export-btn-sub">Yapılandırılmış Veri</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
         </div>

@@ -22,6 +22,9 @@ const DEPARTMENTS = [
 // Uygulama Durumu (State)
 let chartProbCurve = null;
 
+// Dışa Aktarım için son hesaplanan veri (export için global)
+let lastExportData = null;
+
 // Standart Normal Kümülatif Dağılım Fonksiyonu (CDF) Φ(x)
 // Abramowitz and Stegun yaklaşımı (Hata Payı < 7.5e-8)
 function normalCDF(x) {
@@ -129,6 +132,28 @@ function updatePrediction() {
         const p = normalCDF((Math.log(t) - mu) / noiseSigma);
         probData.push(parseFloat((p * 100).toFixed(1)));
     }
+
+    // Dışa aktarım için hesaplanan verileri global değişkene kaydet
+    lastExportData = {
+        inputs: {
+            bolum: dept.name,
+            bolum_grubu: dept.group,
+            gpa: gpa,
+            staj_ay: internship
+        },
+        model: {
+            mu: parseFloat(mu.toFixed(6)),
+            sigma: noiseSigma,
+            beklenen_sure_ay: finalExpectedTime,
+            ci_alt_ay: parseFloat(ciLower.toFixed(2)),
+            ci_ust_ay: parseFloat(ciUpper.toFixed(2))
+        },
+        kumulatif_ihtimal: timeLabels.map((label, i) => ({
+            ay: i + 1,
+            etiket: label,
+            kumulatif_ihtimal_yuzde: probData[i]
+        }))
+    };
 
     if (chartProbCurve) {
         chartProbCurve.data.labels = timeLabels;
@@ -246,3 +271,116 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// =============================================
+// VERİ DIŞA AKTARIM FONKSİYONLARI
+// =============================================
+
+/**
+ * Kümülatif olasılık verilerini CSV formatında indirir.
+ * Sütunlar: Ay | Etiket | Kumulatif_Ihtimal_Yuzde
+ * Ek satırlar: Kullanıcı girdileri ve model parametreleri
+ */
+function exportCSV() {
+    if (!lastExportData) {
+        alert('Henüz hesaplanmış veri yok. Lütfen önce parametreleri ayarlayın.');
+        return;
+    }
+
+    const btn = document.getElementById('btn-export-csv');
+    btn.classList.add('downloading');
+    setTimeout(() => btn.classList.remove('downloading'), 400);
+
+    const d = lastExportData;
+    const lines = [];
+
+    // ---- Başlık Bloğu ----
+    lines.push('# İş Bulma Süresi Tahmincisi - Kümülatif Olasılık Verisi (CSV Dışa Aktarımı)');
+    lines.push('# Oluşturulma Zamanı:,' + new Date().toLocaleString('tr-TR'));
+    lines.push('');
+
+    // ---- Girdi Parametreleri ----
+    lines.push('## GİRDİ PARAMETRELERİ');
+    lines.push('Bölüm,' + d.inputs.bolum);
+    lines.push('Bölüm Grubu,' + d.inputs.bolum_grubu);
+    lines.push('Not Ortalaması (GPA),' + d.inputs.gpa.toFixed(2));
+    lines.push('Staj Tecrübesi (Ay),' + d.inputs.staj_ay);
+    lines.push('');
+
+    // ---- Model Çıktıları ----
+    lines.push('## MODEL ÇIKTILARI (AFT Log-Normal)');
+    lines.push('Beklenen İş Bulma Süresi (Ay),' + d.model.beklenen_sure_ay);
+    lines.push('%95 Güven Aralığı Alt Sınır (Ay),' + d.model.ci_alt_ay);
+    lines.push('%95 Güven Aralığı Üst Sınır (Ay),' + d.model.ci_ust_ay);
+    lines.push('Log-Normal μ (mu) Parametresi,' + d.model.mu);
+    lines.push('Log-Normal σ (sigma) Parametresi,' + d.model.sigma);
+    lines.push('');
+
+    // ---- Kümülatif Olasılık Tablosu ----
+    lines.push('## KÜMÜLATİF İŞE YERLEŞİM İHTİMALİ TABLOSU');
+    lines.push('Ay,Etiket,Kumulatif Ihtimal (%)');
+    d.kumulatif_ihtimal.forEach(row => {
+        lines.push(`${row.ay},${row.etiket},${row.kumulatif_ihtimal_yuzde}`);
+    });
+
+    // ---- BOM + İndirme ----
+    const csvContent = '\uFEFF' + lines.join('\r\n'); // UTF-8 BOM (Excel uyumluluğu)
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const safeName = d.inputs.bolum.replace(/[^a-zA-Z0-9ığüşöçIĞÜŞÖÇ]/g, '_');
+    const filename = `is_bulma_suresi_${safeName}_${Date.now()}.csv`;
+    _triggerDownload(url, filename);
+}
+
+/**
+ * Kümülatif olasılık verilerini JSON formatında indirir.
+ * Girdi parametreleri, model çıktıları ve tam olasılık dizisini içerir.
+ */
+function exportJSON() {
+    if (!lastExportData) {
+        alert('Henüz hesaplanmış veri yok. Lütfen önce parametreleri ayarlayın.');
+        return;
+    }
+
+    const btn = document.getElementById('btn-export-json');
+    btn.classList.add('downloading');
+    setTimeout(() => btn.classList.remove('downloading'), 400);
+
+    const exportObj = {
+        meta: {
+            baslik: 'İş Bulma Süresi Tahmincisi – Kümülatif Olasılık Dışa Aktarımı',
+            model: 'AFT Log-Normal Dağılım (Hızlandırılmış Başarısızlık Süresi)',
+            kaynaklar: [
+                'TÜİK Yükseköğretim İstihdam Göstergeleri (Temmuz 2025 Güncellemesi, 2024 yılı verisi)',
+                'Baert et al. (ScienceDirect, 2021)',
+                'NACE Job Outlook 2021'
+            ],
+            olusturulma: new Date().toISOString()
+        },
+        girdiler: lastExportData.inputs,
+        model_ciktilari: lastExportData.model,
+        kumulatif_ihtimal_serisi: lastExportData.kumulatif_ihtimal
+    };
+
+    const jsonContent = JSON.stringify(exportObj, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const safeName = lastExportData.inputs.bolum.replace(/[^a-zA-Z0-9ığüşöçIĞÜŞÖÇ]/g, '_');
+    const filename = `is_bulma_suresi_${safeName}_${Date.now()}.json`;
+    _triggerDownload(url, filename);
+}
+
+/**
+ * Verilen URL'i gizli bir <a> etiketi ile tetikleyerek dosyayı indirir.
+ * @param {string} url - Blob URL
+ * @param {string} filename - İndirilecek dosya adı
+ */
+function _triggerDownload(url, filename) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
